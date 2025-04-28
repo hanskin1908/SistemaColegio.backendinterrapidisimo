@@ -71,28 +71,44 @@ namespace SistemaColegio.Application.Features.Materias.Services
             }
         }
         
-        public async Task<RespuestaData<List<MateriaDto>>> ObtenerPorEstudianteIdAsync(int userId)
+        public async Task<RespuestaData<List<MateriaDto>>> ObtenerPorEstudianteIdAsync(int id)
         {
             try
             {
-                // Primero buscar el usuario
-                var usuario = await _unidadTrabajo.Users.ObtenerPorIdAsync(userId);
-                if (usuario == null)
-                {
-                    return RespuestaData<List<MateriaDto>>.Fallo($"No se encontró el usuario con ID: {userId}");
-                }
-                if (usuario.StudentId == null){
-                    usuario.StudentId = usuario.Id;
-                }
-                // Obtener el estudiante asociado al usuario
-                var estudiante = await _unidadTrabajo.Estudiantes.ObtenerEstudiantePorUserIdAsync((int)usuario.StudentId);
+                // Variable para almacenar el ID del estudiante
+                int estudianteId;
+                
+                // Primero intentamos buscar directamente como estudiante
+                var estudiante = await _unidadTrabajo.Estudiantes.ObtenerPorIdAsync(id);
+                
+                // Si no encontramos un estudiante, verificamos si es un ID de usuario
                 if (estudiante == null)
                 {
-                    return RespuestaData<List<MateriaDto>>.Fallo($"No se encontró el estudiante asociado al usuario con ID: {userId}");
+                    var usuario = await _unidadTrabajo.Users.ObtenerPorIdAsync(id);
+                    if (usuario == null)
+                    {
+                        return RespuestaData<List<MateriaDto>>.Fallo($"No se encontró ningún estudiante o usuario con ID: {id}");
+                    }
+                    
+                    // Si el usuario no tiene un estudiante asociado, retornamos error
+                    if (!usuario.StudentId.HasValue)
+                    {
+                        return RespuestaData<List<MateriaDto>>.Fallo($"El usuario con ID: {id} no tiene un estudiante asociado");
+                    }
+                    
+                    // Obtenemos el estudiante asociado al usuario
+                    estudiante = await _unidadTrabajo.Estudiantes.ObtenerPorIdAsync(usuario.StudentId.Value);
+                    if (estudiante == null)
+                    {
+                        return RespuestaData<List<MateriaDto>>.Fallo($"No se encontró el estudiante asociado al usuario con ID: {id}");
+                    }
                 }
+                
+                // En este punto tenemos un estudiante válido
+                estudianteId = estudiante.Id;
 
                 // Obtener los registros del estudiante usando el ID del estudiante
-                var registros = await _unidadTrabajo.Registros.ObtenerRegistrosPorEstudianteIdAsync(estudiante.Id);
+                var registros = await _unidadTrabajo.Registros.ObtenerRegistrosPorEstudianteIdAsync(estudianteId);
                 
                 // Si no hay registros, devolver lista vacía
                 if (registros == null || !registros.Any())
@@ -110,9 +126,9 @@ namespace SistemaColegio.Application.Features.Materias.Services
 
                 // Obtener las materias con sus detalles
                 var materias = new List<Subject>();
-                foreach (var id in materiaIds)
+                foreach (var materiaId in materiaIds)
                 {
-                    var materia = await _unidadTrabajo.Materias.ObtenerMateriaPorIdConProfesorAsync(id);
+                    var materia = await _unidadTrabajo.Materias.ObtenerMateriaPorIdConProfesorAsync(materiaId);
                     if (materia != null)
                     {
                         materias.Add(materia);
