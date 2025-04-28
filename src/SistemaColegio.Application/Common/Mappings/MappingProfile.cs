@@ -43,22 +43,24 @@ namespace SistemaColegio.Application.Common.Mappings
                 .ForMember(dest => dest.ProfessorId, opt => opt.MapFrom(src => src.ProfesorId));
             
             CreateMap<Registration, RegistroDto>()
-                .ForMember(dest => dest.EstudianteId, opt => opt.MapFrom(src => src.EstudianteId))
-                .ForMember(dest => dest.NombreEstudiante, opt => opt.MapFrom(src => src.Estudiante != null ? src.Estudiante.Name : null))
-                .ForMember(dest => dest.MateriaId, opt => opt.MapFrom(src => src.MateriaId))
-                .ForMember(dest => dest.NombreMateria, opt => opt.MapFrom(src => src.Materia != null ? src.Materia.Name : null))
-                .ForMember(dest => dest.FechaRegistro, opt => opt.MapFrom(src => src.FechaRegistro));
+                .ForMember(dest => dest.EstudianteId, opt => opt.MapFrom(src => src.StudentId))
+                .ForMember(dest => dest.NombreEstudiante, opt => opt.MapFrom(src => src.Student != null ? src.Student.Name : null))
+                .ForMember(dest => dest.MateriaId, opt => opt.MapFrom(src => src.SubjectId))
+                .ForMember(dest => dest.NombreMateria, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.Name : null))
+                .ForMember(dest => dest.Creditos, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.Credits : 0))
+                .ForMember(dest => dest.NombreProfesor, opt => opt.MapFrom(src => src.Subject != null && src.Subject.Professor != null ? src.Subject.Professor.Name : null))
+                .ForMember(dest => dest.FechaRegistro, opt => opt.MapFrom(src => src.RegistrationDate));
             
             CreateMap<RegistroDto, Registration>()
-                .ForMember(dest => dest.EstudianteId, opt => opt.MapFrom(src => src.EstudianteId))
-                .ForMember(dest => dest.MateriaId, opt => opt.MapFrom(src => src.MateriaId))
-                .ForMember(dest => dest.FechaRegistro, opt => opt.MapFrom(src => src.FechaRegistro));
+                .ForMember(dest => dest.StudentId, opt => opt.MapFrom(src => src.EstudianteId))
+                .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src => src.MateriaId))
+                .ForMember(dest => dest.RegistrationDate, opt => opt.MapFrom(src => src.FechaRegistro));
                 
             // Mapeo para RegistroCreacionDto
             CreateMap<RegistroCreacionDto, Registration>()
-                .ForMember(dest => dest.EstudianteId, opt => opt.MapFrom(src => src.EstudianteId))
-                .ForMember(dest => dest.MateriaId, opt => opt.MapFrom(src => src.MateriaId))
-                .ForMember(dest => dest.FechaRegistro, opt => opt.MapFrom(src => DateTime.Now)); // Establecer fecha actual
+                .ForMember(dest => dest.StudentId, opt => opt.MapFrom(src => src.EstudianteId))
+                .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src => src.MateriaId))
+                .ForMember(dest => dest.RegistrationDate, opt => opt.MapFrom(src => DateTime.Now)); // Establecer fecha actual
                 
             CreateMap<RegistroCreacionDto, RegistroDto>()
                 .ForMember(dest => dest.EstudianteId, opt => opt.MapFrom(src => src.EstudianteId))

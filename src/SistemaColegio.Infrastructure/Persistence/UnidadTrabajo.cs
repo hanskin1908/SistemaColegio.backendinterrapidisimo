@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using SistemaColegio.Domain.Interfaces;
+using SistemaColegio.Domain.Interfaces.Identity;
+using SistemaColegio.Infrastructure.Repositories.Identity;
 
 namespace SistemaColegio.Infrastructure.Persistence
 {
@@ -11,6 +13,7 @@ namespace SistemaColegio.Infrastructure.Persistence
         private IProfesorRepositorio _profesorRepositorio;
         private IMateriaRepositorio _materiaRepositorio;
         private IRegistroRepositorio _registroRepositorio;
+        private IUserRepository _userRepository;
         private bool _disposed;
         
         public UnidadTrabajo(SistemaColegioDbContext contexto)
@@ -25,6 +28,8 @@ namespace SistemaColegio.Infrastructure.Persistence
         public IMateriaRepositorio Materias => _materiaRepositorio ??= new MateriaRepositorio(_contexto);
         
         public IRegistroRepositorio Registros => _registroRepositorio ??= new RegistroRepositorio(_contexto);
+
+        public IUserRepository Users => _userRepository ??= new UserRepository(_contexto);
         
         public async Task<int> CompletarAsync()
         {

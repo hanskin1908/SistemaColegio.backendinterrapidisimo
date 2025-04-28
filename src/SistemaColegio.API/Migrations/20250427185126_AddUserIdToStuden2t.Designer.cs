@@ -9,11 +9,11 @@ using SistemaColegio.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace SistemaColegio.Infrastructure.Persistence.Migrations
+namespace SistemaColegio.API.Migrations
 {
     [DbContext(typeof(SistemaColegioDbContext))]
-    [Migration("20250424184359_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250427185126_AddUserIdToStuden2t")]
+    partial class AddUserIdToStuden2t
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -64,10 +64,6 @@ namespace SistemaColegio.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasFilter("[ProfessorId] IS NOT NULL");
 
-                    b.HasIndex("StudentId")
-                        .IsUnique()
-                        .HasFilter("[StudentId] IS NOT NULL");
-
                     b.ToTable("Users", (string)null);
                 });
 
@@ -107,15 +103,6 @@ namespace SistemaColegio.Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<int>("EstudianteId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("FechaRegistro")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MateriaId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("RegistrationDate")
                         .HasColumnType("datetime2");
 
@@ -127,9 +114,7 @@ namespace SistemaColegio.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EstudianteId");
-
-                    b.HasIndex("MateriaId");
+                    b.HasIndex("StudentId");
 
                     b.HasIndex("SubjectId");
 
@@ -159,7 +144,14 @@ namespace SistemaColegio.Infrastructure.Persistence.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[UserId] IS NOT NULL");
 
                     b.ToTable("Estudiantes", (string)null);
                 });
@@ -185,7 +177,7 @@ namespace SistemaColegio.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("ProfessorId")
+                    b.Property<int?>("ProfessorId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -202,39 +194,36 @@ namespace SistemaColegio.Infrastructure.Persistence.Migrations
                         .HasForeignKey("SistemaColegio.Domain.Entities.Identity.User", "ProfessorId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("SistemaColegio.Domain.Entities.Student", "Student")
-                        .WithOne()
-                        .HasForeignKey("SistemaColegio.Domain.Entities.Identity.User", "StudentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("Professor");
-
-                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("SistemaColegio.Domain.Entities.Registration", b =>
                 {
-                    b.HasOne("SistemaColegio.Domain.Entities.Student", "Estudiante")
+                    b.HasOne("SistemaColegio.Domain.Entities.Student", "Student")
                         .WithMany("Registrations")
-                        .HasForeignKey("EstudianteId")
+                        .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SistemaColegio.Domain.Entities.Subject", "Materia")
-                        .WithMany()
-                        .HasForeignKey("MateriaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SistemaColegio.Domain.Entities.Subject", null)
+                    b.HasOne("SistemaColegio.Domain.Entities.Subject", "Subject")
                         .WithMany("Registrations")
                         .HasForeignKey("SubjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Estudiante");
+                    b.Navigation("Student");
 
-                    b.Navigation("Materia");
+                    b.Navigation("Subject");
+                });
+
+            modelBuilder.Entity("SistemaColegio.Domain.Entities.Student", b =>
+                {
+                    b.HasOne("SistemaColegio.Domain.Entities.Identity.User", "User")
+                        .WithOne("Student")
+                        .HasForeignKey("SistemaColegio.Domain.Entities.Student", "UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SistemaColegio.Domain.Entities.Subject", b =>
@@ -242,10 +231,14 @@ namespace SistemaColegio.Infrastructure.Persistence.Migrations
                     b.HasOne("SistemaColegio.Domain.Entities.Professor", "Professor")
                         .WithMany("Subjects")
                         .HasForeignKey("ProfessorId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Professor");
+                });
+
+            modelBuilder.Entity("SistemaColegio.Domain.Entities.Identity.User", b =>
+                {
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("SistemaColegio.Domain.Entities.Professor", b =>

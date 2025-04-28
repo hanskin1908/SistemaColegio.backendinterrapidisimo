@@ -110,13 +110,13 @@ namespace SistemaColegio.Application.Features.Registros.Services
                 
                 // Verificar si ya existe un registro para este estudiante y materia
                 var existeRegistro = await _unidadTrabajo.Registros.ExisteAsync(
-                    r => r.EstudianteId == registroDto.EstudianteId && r.MateriaId == registroDto.MateriaId);
+                    r => r.StudentId == registroDto.EstudianteId && r.SubjectId == registroDto.MateriaId);
                 
                 if (existeRegistro)
                     return RespuestaData<RegistroDto>.Fallo("Ya existe un registro para este estudiante y materia");
                 
                 var registro = _mapper.Map<Registration>(registroDto);
-                registro.FechaRegistro = DateTime.Now; // Establecer la fecha actual
+                registro.RegistrationDate = DateTime.Now; // Establecer la fecha actual
                 
                 await _unidadTrabajo.Registros.AgregarAsync(registro);
                 await _unidadTrabajo.CompletarAsync();
@@ -149,16 +149,16 @@ namespace SistemaColegio.Application.Features.Registros.Services
                 
                 // Verificar si ya existe un registro para este estudiante y materia
                 var existeRegistro = await _unidadTrabajo.Registros.ExisteAsync(
-                    r => r.EstudianteId == registroCreacionDto.EstudianteId && r.MateriaId == registroCreacionDto.MateriaId);
+                    r => r.StudentId == registroCreacionDto.EstudianteId && r.SubjectId == registroCreacionDto.MateriaId);
                 
                 if (existeRegistro)
                     return RespuestaData<RegistroDto>.Fallo("Ya existe un registro para este estudiante y materia");
                 
                 var registro = new Registration
                 {
-                    EstudianteId = registroCreacionDto.EstudianteId,
-                    MateriaId = registroCreacionDto.MateriaId,
-                    FechaRegistro = DateTime.Now // Establecer la fecha actual automu00e1ticamente
+                    StudentId = registroCreacionDto.EstudianteId,
+                    SubjectId = registroCreacionDto.MateriaId,
+                    RegistrationDate = DateTime.Now // Establecer la fecha actual automu00e1ticamente
                 };
                 
                 await _unidadTrabajo.Registros.AgregarAsync(registro);
@@ -197,13 +197,13 @@ namespace SistemaColegio.Application.Features.Registros.Services
                 
                 // Verificar si ya existe otro registro para este estudiante y materia
                 var existeRegistro = await _unidadTrabajo.Registros.ExisteAsync(
-                    r => r.EstudianteId == registroDto.EstudianteId && r.MateriaId == registroDto.MateriaId && r.Id != id);
+                    r => r.StudentId == registroDto.EstudianteId && r.SubjectId == registroDto.MateriaId && r.Id != id);
                 
                 if (existeRegistro)
                     return RespuestaData<RegistroDto>.Fallo("Ya existe otro registro para este estudiante y materia");
                 
-                registro.EstudianteId = registroDto.EstudianteId;
-                registro.MateriaId = registroDto.MateriaId;
+                registro.StudentId = registroDto.EstudianteId;
+                registro.SubjectId = registroDto.MateriaId;
                 
                 await _unidadTrabajo.Registros.ActualizarAsync(registro);
                 await _unidadTrabajo.CompletarAsync();

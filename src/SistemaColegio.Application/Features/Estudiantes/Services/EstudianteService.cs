@@ -38,11 +38,11 @@ namespace SistemaColegio.Application.Features.Estudiantes.Services
                         var registroDto = new RegistroDto
                         {
                             Id = registro.Id,
-                            EstudianteId = registro.EstudianteId,
-                            NombreEstudiante = registro.Estudiante?.Name,
-                            MateriaId = registro.MateriaId,
-                            NombreMateria = registro.Materia?.Name,
-                            FechaRegistro = registro.FechaRegistro
+                            EstudianteId = registro.StudentId,
+                            NombreEstudiante = registro.Student?.Name,
+                            MateriaId = registro.SubjectId,
+                            NombreMateria = registro.Subject?.Name,
+                            FechaRegistro = registro.RegistrationDate
                         };
                         
                         estudianteDto.Registros.Add(registroDto);
@@ -58,7 +58,7 @@ namespace SistemaColegio.Application.Features.Estudiantes.Services
                 return RespuestaData<List<EstudianteDto>>.Fallo($"Error al obtener estudiantes: {ex.Message}");
             }
         }
-        // Nuevo método: obtener estudiantes por materia
+        
         public async Task<RespuestaData<List<EstudianteDto>>> ObtenerPorMateriaIdAsync(int materiaId)
         {
             try
@@ -73,14 +73,12 @@ namespace SistemaColegio.Application.Features.Estudiantes.Services
             }
         }
 
-        // Nuevo método: obtener materia por id (para validar profesor)
         public async Task<MateriaDto> ObtenerMateriaPorIdAsync(int materiaId)
         {
             var materia = await _unidadTrabajo.Materias.ObtenerPorIdAsync(materiaId);
             if (materia == null) return null;
             return _mapper.Map<MateriaDto>(materia);
         }
-
         
         public async Task<RespuestaData<EstudianteDto>> ObtenerPorIdAsync(int id)
         {
@@ -94,17 +92,16 @@ namespace SistemaColegio.Application.Features.Estudiantes.Services
                 var estudianteDto = _mapper.Map<EstudianteDto>(estudiante);
                 estudianteDto.Registros = new List<RegistroDto>();
                 
-                // Ahora los registros ya vienen incluidos en el estudiante
                 foreach (var registro in estudiante.Registrations)
                 {
                     var registroDto = new RegistroDto
                     {
                         Id = registro.Id,
-                        EstudianteId = registro.EstudianteId,
-                        NombreEstudiante = registro.Estudiante?.Name,
-                        MateriaId = registro.MateriaId,
-                        NombreMateria = registro.Materia?.Name,
-                        FechaRegistro = registro.FechaRegistro
+                        EstudianteId = registro.StudentId,
+                        NombreEstudiante = registro.Student?.Name,
+                        MateriaId = registro.SubjectId,
+                        NombreMateria = registro.Subject?.Name,
+                        FechaRegistro = registro.RegistrationDate
                     };
                     
                     estudianteDto.Registros.Add(registroDto);
@@ -135,11 +132,11 @@ namespace SistemaColegio.Application.Features.Estudiantes.Services
                     var registroDto = new RegistroDto
                     {
                         Id = registro.Id,
-                        EstudianteId = registro.EstudianteId,
-                        NombreEstudiante = registro.Estudiante?.Name,
-                        MateriaId = registro.MateriaId,
-                        NombreMateria = registro.Materia?.Name,
-                        FechaRegistro = registro.FechaRegistro
+                        EstudianteId = registro.StudentId,
+                        NombreEstudiante = registro.Student?.Name,
+                        MateriaId = registro.SubjectId,
+                        NombreMateria = registro.Subject?.Name,
+                        FechaRegistro = registro.RegistrationDate
                     };
                     
                     estudianteDto.Registros.Add(registroDto);
@@ -157,7 +154,6 @@ namespace SistemaColegio.Application.Features.Estudiantes.Services
         {
             try
             {
-                // Verificar si ya existe un estudiante con la misma matrícula
                 var existeEstudiante = await _unidadTrabajo.Estudiantes.ExisteAsync(e => e.StudentId == estudianteDto.Matricula);
                 
                 if (existeEstudiante)
@@ -187,7 +183,6 @@ namespace SistemaColegio.Application.Features.Estudiantes.Services
                 if (estudiante == null)
                     return RespuestaData<EstudianteDto>.Fallo($"No se encontró el estudiante con ID: {id}");
                 
-                // Verificar si ya existe otro estudiante con la misma matrícula
                 var existeEstudiante = await _unidadTrabajo.Estudiantes.ExisteAsync(e => e.StudentId == estudianteDto.Matricula && e.Id != id);
                 
                 if (existeEstudiante)
@@ -200,8 +195,6 @@ namespace SistemaColegio.Application.Features.Estudiantes.Services
                 await _unidadTrabajo.Estudiantes.ActualizarAsync(estudiante);
                 await _unidadTrabajo.CompletarAsync();
                 
-                estudianteDto.Id = estudiante.Id;
-                
                 return RespuestaData<EstudianteDto>.Correcto(estudianteDto, "Estudiante actualizado correctamente");
             }
             catch (Exception ex)
@@ -209,7 +202,7 @@ namespace SistemaColegio.Application.Features.Estudiantes.Services
                 return RespuestaData<EstudianteDto>.Fallo($"Error al actualizar el estudiante: {ex.Message}");
             }
         }
-        
+
         public async Task<RespuestaData<bool>> EliminarAsync(int id)
         {
             try

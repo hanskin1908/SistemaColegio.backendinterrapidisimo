@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SistemaColegio.Domain.Entities.Identity;
 
 namespace SistemaColegio.Domain.Entities
 {
@@ -10,6 +11,10 @@ namespace SistemaColegio.Domain.Entities
         
         // Propiedad adicional para compatibilidad
         public string Nombre => Name;
+        
+        // Relación con User
+        public int? UserId { get; set; }
+        public User? User { get; set; }
         
         // Relaciones
         public ICollection<Registration> Registrations { get; set; } = new List<Registration>();

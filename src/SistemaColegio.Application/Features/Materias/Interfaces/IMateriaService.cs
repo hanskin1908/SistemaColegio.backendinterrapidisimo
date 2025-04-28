@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using SistemaColegio.Application.Common.DTOs;
 using SistemaColegio.Application.Common.Responses;
+using SistemaColegio.Domain.Entities;
 
 namespace SistemaColegio.Application.Features.Materias.Interfaces
 {
@@ -17,5 +18,6 @@ namespace SistemaColegio.Application.Features.Materias.Interfaces
         Task<RespuestaData<MateriaDto>> CrearAsync(MateriaDto materiaDto);
         Task<RespuestaData<MateriaDto>> ActualizarAsync(int id, MateriaDto materiaDto);
         Task<RespuestaData<bool>> EliminarAsync(int id);
+        Task<Professor> BuscarProfesorPorEmailAsync(string email);
     }
 }

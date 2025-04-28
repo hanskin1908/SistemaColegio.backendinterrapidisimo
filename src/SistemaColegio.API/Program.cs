@@ -1,11 +1,6 @@
-using System;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SistemaColegio.Application.Features.Auth.Interfaces;
@@ -22,7 +17,8 @@ using SistemaColegio.Domain.Interfaces;
 using SistemaColegio.Domain.Interfaces.Identity;
 using SistemaColegio.Infrastructure.Persistence;
 using SistemaColegio.Infrastructure.Repositories.Identity;
-using SistemaColegio.API.Logs;using SistemaColegio.API.Logs;
+using SistemaColegio.API.Logs;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -32,8 +28,17 @@ builder.Services.AddControllers();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // Configure DbContext
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<SistemaColegioDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString, sqlServerOptionsAction: sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+        sqlOptions.MigrationsAssembly("SistemaColegio.API");
+    })
+);
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -125,16 +130,25 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "SistemaColegio API v1"));
-    // Middleware global de manejo de excepciones
-    app.UseMiddleware<ExceptionMiddleware>();
-    app.UseHttpsRedirection();
-
-    app.UseCors("AllowAll");
-
-    app.UseAuthentication();
-    app.UseAuthorization();
-
-    app.MapControllers();
-
-    app.Run();
 }
+
+// Middleware global de manejo de excepciones
+app.UseMiddleware<ExceptionMiddleware>();
+
+app.UseHttpsRedirection();
+
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+// Ensure database is created and migrations are applied
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<SistemaColegioDbContext>();
+    await SeedData.Initialize(context);
+}
+
+app.Run();

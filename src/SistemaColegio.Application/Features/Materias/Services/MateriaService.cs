@@ -71,31 +71,60 @@ namespace SistemaColegio.Application.Features.Materias.Services
             }
         }
         
-        public async Task<RespuestaData<List<MateriaDto>>> ObtenerPorEstudianteIdAsync(int estudianteId)
+        public async Task<RespuestaData<List<MateriaDto>>> ObtenerPorEstudianteIdAsync(int userId)
         {
             try
             {
-                // Obtener los registros del estudiante
-                var registros = await _unidadTrabajo.Registros.ObtenerRegistrosPorEstudianteIdAsync(estudianteId);
+                // Primero buscar el usuario
+                var usuario = await _unidadTrabajo.Users.ObtenerPorIdAsync(userId);
+                if (usuario == null)
+                {
+                    return RespuestaData<List<MateriaDto>>.Fallo($"No se encontró el usuario con ID: {userId}");
+                }
+                if (usuario.StudentId == null){
+                    usuario.StudentId = usuario.Id;
+                }
+                // Obtener el estudiante asociado al usuario
+                var estudiante = await _unidadTrabajo.Estudiantes.ObtenerEstudiantePorUserIdAsync((int)usuario.StudentId);
+                if (estudiante == null)
+                {
+                    return RespuestaData<List<MateriaDto>>.Fallo($"No se encontró el estudiante asociado al usuario con ID: {userId}");
+                }
+
+                // Obtener los registros del estudiante usando el ID del estudiante
+                var registros = await _unidadTrabajo.Registros.ObtenerRegistrosPorEstudianteIdAsync(estudiante.Id);
                 
-                if (registros == null || registros.Count == 0)
+                // Si no hay registros, devolver lista vacía
+                if (registros == null || !registros.Any())
+                {
                     return RespuestaData<List<MateriaDto>>.Correcto(new List<MateriaDto>(), "El estudiante no tiene materias registradas");
+                }
                 
-                // Extraer los IDs de las materias
-                var materiaIds = registros.Select(r => r.SubjectId).ToList();
+                // Extraer los IDs de las materias y filtrar los nulos
+                var materiaIds = registros.Where(r => r?.SubjectId > 0).Select(r => r.SubjectId).Distinct().ToList();
                 
+                if (!materiaIds.Any())
+                {
+                    return RespuestaData<List<MateriaDto>>.Correcto(new List<MateriaDto>(), "No se encontraron materias válidas para el estudiante");
+                }
+
                 // Obtener las materias con sus detalles
                 var materias = new List<Subject>();
                 foreach (var id in materiaIds)
                 {
                     var materia = await _unidadTrabajo.Materias.ObtenerMateriaPorIdConProfesorAsync(id);
                     if (materia != null)
+                    {
                         materias.Add(materia);
+                    }
                 }
                 
                 var materiasDto = _mapper.Map<List<MateriaDto>>(materias);
                 
-                return RespuestaData<List<MateriaDto>>.Correcto(materiasDto, "Materias del estudiante obtenidas correctamente");
+                return RespuestaData<List<MateriaDto>>.Correcto(materiasDto, 
+                    materias.Any() 
+                        ? "Materias del estudiante obtenidas correctamente" 
+                        : "No se encontraron materias activas para el estudiante");
             }
             catch (Exception ex)
             {
@@ -248,6 +277,20 @@ namespace SistemaColegio.Application.Features.Materias.Services
             catch (Exception ex)
             {
                 return RespuestaData<ProfesorMateriasResultDto>.Fallo($"Error al obtener materias del profesor: {ex.Message}");
+            }
+        }
+
+        public async Task<Professor> BuscarProfesorPorEmailAsync(string email)
+        {
+            try
+            {
+                // Buscar el profesor por email
+                var profesores = await _unidadTrabajo.Profesores.ObtenerTodosAsync();
+                return profesores.FirstOrDefault(p => p.Email == email);
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
     }

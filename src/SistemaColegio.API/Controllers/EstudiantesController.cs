@@ -42,7 +42,7 @@ namespace SistemaColegio.API.Controllers
         {
             var respuesta = await _estudianteService.ObtenerPorIdAsync(id);
             
-            if (!respuesta.Exito && respuesta.Mensaje.Contains("No se encontru00f3"))
+            if (!respuesta.Exito && respuesta.Mensaje.Contains("No se encontro"))
                 return NotFound(respuesta);
             
             if (respuesta.Exito)

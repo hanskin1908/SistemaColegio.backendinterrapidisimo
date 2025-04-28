@@ -9,7 +9,7 @@ namespace SistemaColegio.Domain.Entities
         public int Credits { get; set; } = 3;
         
         // Relaciones
-        public int ProfessorId { get; set; }
+        public int? ProfessorId { get; set; }
         public Professor? Professor { get; set; }
         public ICollection<Registration> Registrations { get; set; } = new List<Registration>();
     }

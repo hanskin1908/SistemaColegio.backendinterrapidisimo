@@ -10,5 +10,7 @@ namespace SistemaColegio.Domain.Interfaces
         Task<Student> ObtenerEstudiantePorMatriculaAsync(string matricula);
         // Nuevo método para obtener estudiantes por materia
         Task<IReadOnlyList<Student>> ObtenerEstudiantesPorMateriaIdAsync(int materiaId);
+        // Nuevo método para obtener estudiante por userId
+        Task<Student> ObtenerEstudiantePorUserIdAsync(int userId);
     }
 }

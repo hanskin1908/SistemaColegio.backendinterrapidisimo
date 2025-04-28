@@ -12,12 +12,21 @@ namespace SistemaColegio.Infrastructure.Persistence
         public EstudianteRepositorio(SistemaColegioDbContext contexto) : base(contexto)
         {
         }
+
+        public async Task<Student> ObtenerEstudiantePorUserIdAsync(int userId)
+        {
+            return await _contexto.Estudiantes
+                .Include(e => e.Registrations)
+                    .ThenInclude(r => r.Subject)
+                .Include(e => e.User)
+                .FirstOrDefaultAsync(e => e.Id == userId);
+        }
         
         public async Task<IReadOnlyList<Student>> ObtenerEstudiantesConRegistrosAsync()
         {
             return await _contexto.Estudiantes
                 .Include(e => e.Registrations)
-                    .ThenInclude(r => r.Materia)
+                    .ThenInclude(r => r.Subject)
                 .ToListAsync();
         }
         
@@ -25,7 +34,7 @@ namespace SistemaColegio.Infrastructure.Persistence
         {
             return await _contexto.Estudiantes
                 .Include(e => e.Registrations)
-                    .ThenInclude(r => r.Materia)
+                    .ThenInclude(r => r.Subject)
                 .FirstOrDefaultAsync(e => e.StudentId == matricula);
         }
         
@@ -34,14 +43,14 @@ namespace SistemaColegio.Infrastructure.Persistence
         {
             return await _contexto.Estudiantes
                 .Include(e => e.Registrations)
-                    .ThenInclude(r => r.Materia)
+                    .ThenInclude(r => r.Subject)
                 .FirstOrDefaultAsync(e => e.Id == id);
         }
         // Nuevo método: obtener estudiantes por materia
         public async Task<IReadOnlyList<Student>> ObtenerEstudiantesPorMateriaIdAsync(int materiaId)
         {
             return await _contexto.Estudiantes
-                .Where(e => e.Registrations.Any(r => r.MateriaId == materiaId))
+                .Where(e => e.Registrations.Any(r => r.SubjectId == materiaId))
                 .Include(e => e.Registrations)
                 .ToListAsync();
         }

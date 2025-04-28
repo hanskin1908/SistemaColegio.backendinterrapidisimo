@@ -8,6 +8,7 @@ namespace SistemaColegio.Infrastructure.Persistence
     {
         public SistemaColegioDbContext(DbContextOptions<SistemaColegioDbContext> options) : base(options)
         {
+          
         }
         
         public DbSet<Student> Estudiantes { get; set; }
@@ -20,7 +21,6 @@ namespace SistemaColegio.Infrastructure.Persistence
         {
             base.OnModelCreating(modelBuilder);
             
-            // Configuración de entidades
             modelBuilder.Entity<Student>(entity =>
             {
                 entity.ToTable("Estudiantes");
@@ -31,9 +31,14 @@ namespace SistemaColegio.Infrastructure.Persistence
                 entity.Ignore(e => e.Nombre);
                 
                 entity.HasMany(e => e.Registrations)
-                      .WithOne(r => r.Estudiante)
-                      .HasForeignKey(r => r.EstudianteId)
+                      .WithOne(r => r.Student)
+                      .HasForeignKey(r => r.StudentId)
                       .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(s => s.User)
+                      .WithOne(u => u.Student)
+                      .HasForeignKey<Student>(s => s.UserId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
             
             modelBuilder.Entity<Professor>(entity =>
@@ -54,6 +59,7 @@ namespace SistemaColegio.Infrastructure.Persistence
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Code).IsRequired().HasMaxLength(20);
                 entity.Property(e => e.Credits).IsRequired();
+                entity.Property(e => e.ProfessorId).IsRequired(false);
                 
                 entity.HasOne(s => s.Professor)
                       .WithMany(p => p.Subjects)
@@ -65,21 +71,20 @@ namespace SistemaColegio.Infrastructure.Persistence
             {
                 entity.ToTable("Registros");
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.FechaRegistro).IsRequired();
+                entity.Property(e => e.RegistrationDate).IsRequired();
                 
-                // Ignore the compatibility properties
-                entity.Ignore(e => e.StudentId);
-                entity.Ignore(e => e.SubjectId);
-                entity.Ignore(e => e.RegistrationDate);
+                entity.Property(e => e.StudentId).IsRequired();
+                entity.Property(e => e.SubjectId).IsRequired();
+                entity.Property(e => e.RegistrationDate).IsRequired();
                 
-                entity.HasOne(r => r.Estudiante)
+                entity.HasOne(r => r.Student)
                       .WithMany(s => s.Registrations)
-                      .HasForeignKey(r => r.EstudianteId)
+                      .HasForeignKey(r => r.StudentId)
                       .OnDelete(DeleteBehavior.Cascade);
                 
-                entity.HasOne(r => r.Materia)
-                      .WithMany()
-                      .HasForeignKey(r => r.MateriaId)
+                entity.HasOne(r => r.Subject)
+                      .WithMany(s => s.Registrations)
+                      .HasForeignKey(r => r.SubjectId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -93,8 +98,8 @@ namespace SistemaColegio.Infrastructure.Persistence
                 entity.Property(e => e.CreatedAt).IsRequired();
                 
                 entity.HasOne(u => u.Student)
-                      .WithOne()
-                      .HasForeignKey<User>(u => u.StudentId)
+                      .WithOne(s => s.User)
+                      .HasForeignKey<Student>(s => s.UserId)
                       .OnDelete(DeleteBehavior.SetNull);
                 
                 entity.HasOne(u => u.Professor)

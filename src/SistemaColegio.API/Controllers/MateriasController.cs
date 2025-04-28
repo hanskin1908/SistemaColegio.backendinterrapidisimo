@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using SistemaColegio.Application.Common.DTOs;
 using SistemaColegio.Application.Features.Materias.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace SistemaColegio.API.Controllers
 {
@@ -53,7 +54,7 @@ namespace SistemaColegio.API.Controllers
         }
         
         [HttpGet("estudiante/{estudianteId}")]
-        [Authorize(Roles = "admin,student")]
+        [Authorize(Roles = "admin,student,professor")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ObtenerPorEstudianteId(int estudianteId)
@@ -105,13 +106,28 @@ namespace SistemaColegio.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ObtenerMateriasDelProfesorAutenticado()
         {
+            // Obtener el email del usuario autenticado
+            var emailClaim = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email);
+            var userEmail = emailClaim?.Value ?? "desconocido";
+            
             // Obtener el claim "profesorId" del usuario autenticado
             var profesorIdClaim = User.Claims.FirstOrDefault(c => c.Type == "profesorId");
+            int profesorId;
+            
             if (profesorIdClaim == null)
             {
-                return Unauthorized(new { Exito = false, Mensaje = "No se encontró el claim de profesorId en el token." });
+                // Intentar buscar el profesor por email en la base de datos
+                var profesor = await _materiaService.BuscarProfesorPorEmailAsync(userEmail);
+                if (profesor == null)
+                {
+                    return Unauthorized(new { 
+                        Exito = false, 
+                        Mensaje = $"No se encontró el claim de profesorId en el token para el usuario {userEmail}. Verifique que este usuario tenga un profesor asociado en la base de datos."
+                    });
+                }
+                profesorId = profesor.Id;
             }
-            if (!int.TryParse(profesorIdClaim.Value, out int profesorId))
+            else if (!int.TryParse(profesorIdClaim.Value, out profesorId))
             {
                 return Unauthorized(new { Exito = false, Mensaje = "El claim de profesorId no es válido." });
             }
@@ -200,26 +216,6 @@ namespace SistemaColegio.API.Controllers
             
             if (!respuesta.Exito && respuesta.Mensaje.Contains("No se encontru00f3"))
                 return NotFound(respuesta);
-            
-            if (!respuesta.Exito && respuesta.Mensaje.Contains("No se puede eliminar"))
-                return BadRequest(respuesta);
-            
-            if (respuesta.Exito)
-                return Ok(respuesta);
-            
-            return StatusCode(StatusCodes.Status500InternalServerError, respuesta);
-        }
-
-        [HttpGet("multiple")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> ObtenerPorIds([FromQuery] List<int> ids)
-        {
-            if (ids == null || !ids.Any())
-                return BadRequest(new { Exito = false, Mensaje = "Debe proporcionar al menos un ID de materia" });
-            
-            var respuesta = await _materiaService.ObtenerPorIdsAsync(ids);
             
             if (respuesta.Exito)
                 return Ok(respuesta);

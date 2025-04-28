@@ -204,6 +204,24 @@ namespace SistemaColegio.Application.Features.Auth.Services
             {
                 claims.Add(new Claim("profesorId", user.ProfessorId.Value.ToString()));
             }
+            // Si el usuario es profesor pero no tiene ProfessorId, buscar en la base de datos
+            else if (user.Role == "professor")
+            {
+                // Buscar el profesor por email
+                var profesor = _profesorRepositorio.ObtenerTodosAsync().Result
+                    .FirstOrDefault(p => p.Email == user.Email);
+                
+                if (profesor != null)
+                {
+                    // Actualizar el usuario con el ID del profesor
+                    user.ProfessorId = profesor.Id;
+                    _userRepository.ActualizarAsync(user).Wait();
+                    _unidadTrabajo.CompletarAsync().Wait();
+                    
+                    // Agregar el claim
+                    claims.Add(new Claim("profesorId", profesor.Id.ToString()));
+                }
+            }
             // (Opcional) Agregar claim de studentId si corresponde
             if (user.StudentId.HasValue)
             {
